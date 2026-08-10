@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "spreadsheets",
+  "category": "data",
+  "short_description": "Spreadsheet and CSV analysis.",
+  "source_path": "C:\\Users\\30626\\.codex\\skills\\xlsx",
+  "capability": "spreadsheets",
+  "domain_terms": ["CSV", "xlsx", "表格"],
+  "trigger_terms": ["CSV", "折线图", "xlsx", "表格"],
+  "weak_context_terms": [],
+  "negative_terms": ["CST CSV", "S参数CSV"],
+  "task_types": ["spreadsheet"],
+  "inputs": ["csv_path"],
+  "outputs": ["spreadsheet"],
+  "risk_level": "low",
+  "requires_approval": false,
+  "adapter_binding": {"packet_type": null, "adapter_allowed": false}
+}

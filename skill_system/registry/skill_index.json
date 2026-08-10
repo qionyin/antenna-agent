@@ -1,0 +1,201 @@
+{
+  "schema_version": "1.0",
+  "generated_from": "skill_system/categories/**/*.json",
+  "skills": {
+    "antenna-baseline-ablation-planner": {
+      "id": "antenna-baseline-ablation-planner",
+      "category": "antenna.experiment",
+      "short_description": "Plan fair antenna baselines, ablations, sweeps, and optimizer comparisons.",
+      "capability": "antenna_baseline_ablation_planner",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\antenna-baseline-ablation-planner",
+      "risk_level": "low",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": "run_manifest",
+        "adapter_allowed": true
+      }
+    },
+    "antenna-claim-experiment-planner": {
+      "id": "antenna-claim-experiment-planner",
+      "category": "antenna.experiment",
+      "short_description": "Convert antenna claims and ideas into measurable metrics, validation criteria, parameter bounds, and experiment plans.",
+      "capability": "antenna_claim_experiment_planner",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\antenna-claim-experiment-planner",
+      "risk_level": "low",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": "experiment_contract",
+        "adapter_allowed": true
+      }
+    },
+    "antenna-research-idea-advisor": {
+      "id": "antenna-research-idea-advisor",
+      "category": "antenna.research",
+      "short_description": "Evidence-aware antenna idea, novelty, graph evidence, and improvement advice.",
+      "capability": "antenna_research_idea_advisor",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\antenna-research-idea-advisor",
+      "risk_level": "low",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": "idea_card",
+        "adapter_allowed": true
+      }
+    },
+    "antenna-research-ideation": {
+      "id": "antenna-research-ideation",
+      "category": "antenna.research",
+      "short_description": "Paper reproduction, geometry extraction, parameter mapping, geometry evidence, and CST readiness planning.",
+      "capability": "antenna_research_ideation",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\antenna-research-ideation",
+      "risk_level": "medium",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": "geometry_contract",
+        "adapter_allowed": true
+      }
+    },
+    "antenna-research-reviewer": {
+      "id": "antenna-research-reviewer",
+      "category": "antenna.research",
+      "short_description": "Independent review of antenna phase handoffs, CST readiness, results, and blockers.",
+      "capability": "antenna_research_reviewer",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\antenna-research-reviewer",
+      "risk_level": "low",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": "next_iteration_plan",
+        "adapter_allowed": true
+      }
+    },
+    "antenna-result-to-claim": {
+      "id": "antenna-result-to-claim",
+      "category": "antenna.experiment",
+      "short_description": "Assess antenna CST/exported results against claims without overclaiming.",
+      "capability": "antenna_result_to_claim",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\antenna-result-to-claim",
+      "risk_level": "low",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": "claim_assessment",
+        "adapter_allowed": true
+      }
+    },
+    "antenna-skills": {
+      "id": "antenna-skills",
+      "category": "antenna",
+      "short_description": "Top-level antenna router for local antenna research, CST, optimization, result assessment, and E platform workflows.",
+      "capability": "antenna_skills",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills",
+      "risk_level": "medium",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": null,
+        "adapter_allowed": false
+      }
+    },
+    "cst-control": {
+      "id": "cst-control",
+      "category": "antenna.cst",
+      "short_description": "CST model creation, preflight, ports, boundaries, history, solver gate, and export diagnostics.",
+      "capability": "cst_control",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\cst-control",
+      "risk_level": "high",
+      "requires_approval": true,
+      "adapter_binding": {
+        "packet_type": "run_manifest",
+        "adapter_allowed": true
+      }
+    },
+    "docx": {
+      "id": "docx",
+      "category": "document",
+      "short_description": "Word document creation and formatting.",
+      "capability": "docx",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\docx",
+      "risk_level": "low",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": null,
+        "adapter_allowed": false
+      }
+    },
+    "e-platform-cst": {
+      "id": "e-platform-cst",
+      "category": "antenna.cst",
+      "short_description": "Local E platform CST and antenna execution adapter selection.",
+      "capability": "e_platform_cst",
+      "source_path": "E:\\antenna skills",
+      "risk_level": "medium",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": "run_manifest",
+        "adapter_allowed": false
+      }
+    },
+    "frontend-design": {
+      "id": "frontend-design",
+      "category": "frontend",
+      "short_description": "Frontend UI, React, dashboard, layout, and web design work.",
+      "capability": "frontend_design",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\frontend-design",
+      "risk_level": "low",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": null,
+        "adapter_allowed": false
+      }
+    },
+    "paperwise": {
+      "id": "paperwise",
+      "category": "paper",
+      "short_description": "Read-only PaperWise reports, vector evidence, and graph evidence.",
+      "capability": "paperwise_vector_library_reader",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\paperwise-main",
+      "risk_level": "low",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": null,
+        "adapter_allowed": false
+      }
+    },
+    "pdf": {
+      "id": "pdf",
+      "category": "paper",
+      "short_description": "PDF extraction and reading support.",
+      "capability": "pdf",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\pdf",
+      "risk_level": "low",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": null,
+        "adapter_allowed": false
+      }
+    },
+    "skill-creator": {
+      "id": "skill-creator",
+      "category": "meta",
+      "short_description": "Create, test, or improve Codex skills and skill trigger behavior.",
+      "capability": "skill_creator",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\.system\\skill-creator",
+      "risk_level": "low",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": null,
+        "adapter_allowed": false
+      }
+    },
+    "spreadsheets": {
+      "id": "spreadsheets",
+      "category": "data",
+      "short_description": "Spreadsheet and CSV analysis.",
+      "capability": "spreadsheets",
+      "source_path": "C:\\Users\\30626\\.codex\\skills\\xlsx",
+      "risk_level": "low",
+      "requires_approval": false,
+      "adapter_binding": {
+        "packet_type": null,
+        "adapter_allowed": false
+      }
+    }
+  }
+}

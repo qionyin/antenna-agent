@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "generated_from": "skill_system/categories/**/*.json",
+  "categories": {
+    "antenna.experiment": [
+      "antenna-baseline-ablation-planner",
+      "antenna-claim-experiment-planner",
+      "antenna-result-to-claim"
+    ],
+    "antenna.research": [
+      "antenna-research-idea-advisor",
+      "antenna-research-ideation",
+      "antenna-research-reviewer"
+    ],
+    "antenna": [
+      "antenna-skills"
+    ],
+    "antenna.cst": [
+      "cst-control",
+      "e-platform-cst"
+    ],
+    "document": [
+      "docx"
+    ],
+    "frontend": [
+      "frontend-design"
+    ],
+    "paper": [
+      "paperwise",
+      "pdf"
+    ],
+    "meta": [
+      "skill-creator"
+    ],
+    "data": [
+      "spreadsheets"
+    ]
+  }
+}

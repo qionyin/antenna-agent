@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "antenna-research-reviewer",
+  "category": "antenna.research",
+  "short_description": "Independent review of antenna phase handoffs, CST readiness, results, and blockers.",
+  "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\antenna-research-reviewer",
+  "capability": "antenna_research_reviewer",
+  "domain_terms": ["antenna", "天线", "CST", "geometry", "model_spec", "run_manifest", "case", "monitors"],
+  "trigger_terms": ["审查", "review", "检查", "verify", "能不能进入", "下一阶段", "preflight", "不要修复", "too simplified", "简化", "object tree", "safe", "missing monitors", "交接", "claiming built"],
+  "weak_context_terms": ["审查一下，不要修复", "这个模型是不是太简化了", "帮我看看这个case能不能继续下一阶段"],
+  "negative_terms": ["React", "frontend", "VSCode", "端口占用"],
+  "task_types": ["review", "simulation_debug"],
+  "inputs": ["skill_packet", "artifact_refs"],
+  "outputs": ["next_iteration_plan"],
+  "risk_level": "low",
+  "requires_approval": false,
+  "adapter_binding": {"packet_type": "next_iteration_plan", "adapter_allowed": true}
+}

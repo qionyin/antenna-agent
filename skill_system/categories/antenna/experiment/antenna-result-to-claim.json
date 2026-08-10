@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "antenna-result-to-claim",
+  "category": "antenna.experiment",
+  "short_description": "Assess antenna CST/exported results against claims without overclaiming.",
+  "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\antenna-result-to-claim",
+  "capability": "antenna_result_to_claim",
+  "domain_terms": ["antenna", "天线", "S11", "VSWR", "gain", "efficiency", "farfield", "CST", "export"],
+  "trigger_terms": ["支撑", "claim", "结果", "result", "results", "评估", "判断", "CSV", "return loss", "efficiency", "farfield", "monitor", "-10 dB", "带宽", "实测结论", "宽带声明"],
+  "weak_context_terms": ["检查这个结果能不能支撑claim", "E:\\antenna skills-resault\\runs 里的结果帮我评估一下"],
+  "negative_terms": ["股票", "React", "frontend"],
+  "task_types": ["result_to_claim"],
+  "inputs": ["result_packet", "claim_plan"],
+  "outputs": ["claim_assessment"],
+  "risk_level": "low",
+  "requires_approval": false,
+  "adapter_binding": {"packet_type": "claim_assessment", "adapter_allowed": true}
+}

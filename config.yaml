@@ -1,0 +1,49 @@
+redis:
+  url: "redis://localhost:6379/0"
+  l1_recent_turns: 20
+  json_retention_days: 360
+  stream_retention_days: 360
+  vector_retention_days: 360
+
+paths:
+  workspace_root: "D:\\pythoncode\\antenna_agent_lab\\workspace"
+  logs_root: "D:\\pythoncode\\antenna_agent_lab\\logs"
+  antenna_skills_root: "C:\\Users\\30626\\.codex\\skills\\Antenna Skills"
+  e_platform_root: "E:\\antenna skills"
+  e_results_root: "E:\\antenna skills-resault"
+  paperwise_root: "C:\\Users\\30626\\.codex\\skills\\paperwise-main"
+  ieee_harvester_root: "C:\\Users\\30626\\.codex\\skills\\ieee-xplore-harvester"
+  allowed_tool_paths:
+    - "C:\\Users\\30626\\.codex\\skills"
+    - "E:\\antenna skills"
+    - "E:\\antenna skills-resault"
+
+runtime:
+  agent_timeout_seconds: 60
+  max_node_retries: 3
+  max_graph_steps: 50
+  max_auto_fix_rounds: 3
+  approval_ttl_hours: 24
+  approval_abandoned_after_timeouts: 3
+
+retrieval:
+  l2_final_top_k: 5
+  l3_workflow_top_k: 5
+  l2_min_relevance_score: 0.51
+  l3_min_relevance_score: 0.51
+
+llm:
+  enabled: false
+  base_url: "https://api-cn.smallice.xyz/v1"
+  api_key_env: "OPENAI_API_KEY"
+  model_name: "gpt-5.5"
+  embedding_model_name: "text-embedding-v4"
+  timeout_seconds: 30
+
+embedding:
+  provider: "qwen"
+  base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  api_key_env: "API_KEY"
+  model_name: "text-embedding-v4"
+  dimensions: 1024
+  timeout_seconds: 30

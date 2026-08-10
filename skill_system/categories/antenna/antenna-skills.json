@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "antenna-skills",
+  "category": "antenna",
+  "short_description": "Top-level antenna router for local antenna research, CST, optimization, result assessment, and E platform workflows.",
+  "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills",
+  "capability": "antenna_skills",
+  "domain_terms": ["antenna", "天线", "S11", "gain", "增益", "ARBW", "轴比", "MIMO", "HFSS", "CST", "surrogate", "代理模型"],
+  "trigger_terms": ["优化", "diagnostics", "isolation", "farfield", "surrogate", "checkpoint", "失败队列", "S11不行", "增益太低", "带宽不够", "跑一下仿真"],
+  "weak_context_terms": ["S11不行，帮我找原因", "增益太低，怎么改", "带宽不够，优化一下", "优化一下参数", "跑一下仿真看看结果"],
+  "negative_terms": ["React", "frontend", "VSCode", "股票", "邮件"],
+  "task_types": ["optimization", "diagnostic", "batch_plan"],
+  "inputs": ["user_input"],
+  "outputs": ["skill_route_plan"],
+  "risk_level": "medium",
+  "requires_approval": false,
+  "adapter_binding": {"packet_type": null, "adapter_allowed": false}
+}

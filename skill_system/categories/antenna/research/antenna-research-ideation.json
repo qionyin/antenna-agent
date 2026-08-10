@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "antenna-research-ideation",
+  "category": "antenna.research",
+  "short_description": "Paper reproduction, geometry extraction, parameter mapping, geometry evidence, and CST readiness planning.",
+  "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\antenna-research-ideation",
+  "capability": "antenna_research_ideation",
+  "domain_terms": ["antenna", "天线", "patch", "slot", "filtering", "mimo", "array", "siw", "metasurface", "cpw"],
+  "trigger_terms": ["复现", "论文", "paper", "pdf", "geometry", "geometry_sketch", "结构", "建模", "尺寸", "参数", "映射", "图", "figure", "model", "case", "spec", "CST对象", "parameter"],
+  "weak_context_terms": ["复现这篇论文", "这个结构怎么建模", "把图里的尺寸整理出来", "geometry不完整", "对比论文图和模型图", "辐射方向图和论文图不一致"],
+  "negative_terms": ["React", "frontend", "dashboard", "Word", "股票", "邮件"],
+  "task_types": ["paper_reproduction", "paper_to_cst", "geometry_extraction", "parameter_mapping", "cst_case_library"],
+  "inputs": ["user_input", "paperwise_evidence", "pdf_artifact", "objective_contract"],
+  "outputs": ["geometry_contract", "parameter_resolution", "geometry_sketch_validation"],
+  "risk_level": "medium",
+  "requires_approval": false,
+  "adapter_binding": {"packet_type": "geometry_contract", "adapter_allowed": true}
+}

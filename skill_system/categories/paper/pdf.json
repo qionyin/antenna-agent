@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "pdf",
+  "category": "paper",
+  "short_description": "PDF extraction and reading support.",
+  "source_path": "C:\\Users\\30626\\.codex\\skills\\pdf",
+  "capability": "pdf",
+  "domain_terms": ["PDF", "pdf"],
+  "trigger_terms": ["PDF", "pdf", "图", "figure"],
+  "weak_context_terms": [],
+  "negative_terms": [],
+  "task_types": ["pdf_reading"],
+  "inputs": ["pdf_path"],
+  "outputs": ["pdf_extract"],
+  "risk_level": "low",
+  "requires_approval": false,
+  "adapter_binding": {"packet_type": null, "adapter_allowed": false}
+}

@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0",
+  "created_at": "2026-07-26T12:43:12.918834+00:00",
+  "paperwise_root": "C:\\Users\\30626\\.codex\\skills\\paperwise-main",
+  "db_path": "C:\\Users\\30626\\.codex\\skills\\paperwise-main\\outputs\\.kb\\chroma.sqlite3",
+  "cases": 5,
+  "corpus_records": 4272,
+  "top_k": 5,
+  "external_embedding": true,
+  "embedding_provider": "qwen",
+  "embedding_model": "text-embedding-v3",
+  "embedding_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  "embedding_api_key_env": "API_KEY",
+  "semantic_threshold": 0.51,
+  "metric_definitions": {
+    "precision_at_k": "returned items with expected paper_id / returned items",
+    "recall_at_k": "paper-level recall: 1 when expected paper_id appears in top_k else 0, averaged over cases",
+    "hit_rate_at_k": "same binary event as paper-level recall, reported explicitly for search UX"
+  },
+  "systems": [
+    {
+      "system": "paperwise_official_chroma_qwen",
+      "backend": "PaperWise Chroma store.query + Qwen text-embedding-v3",
+      "cases": 5,
+      "top_k": 5,
+      "precision_at_k": 0.2,
+      "recall_at_k": 1.0,
+      "hit_rate_at_k": 1.0,
+      "avg_latency_ms": 2413.7401,
+      "total_latency_ms": 12068.7941,
+      "avg_returned_count": 5.0
+    },
+    {
+      "system": "memory_bm2550_qwen15_semantic5_threshold",
+      "backend": "BM25 top50 + Qwen top15 + original-query semantic top5, threshold=0.51",
+      "cases": 5,
+      "top_k": 5,
+      "precision_at_k": 0.8,
+      "recall_at_k": 1.0,
+      "hit_rate_at_k": 1.0,
+      "avg_latency_ms": 3846.2907,
+      "total_latency_ms": 19231.5697,
+      "avg_returned_count": 5.0
+    }
+  ],
+  "delta_memory_minus_paperwise": {
+    "precision_at_k": 0.6,
+    "recall_at_k": 0.0,
+    "hit_rate_at_k": 0.0,
+    "avg_latency_ms": 1432.5506
+  },
+  "external_call_summary": {
+    "embedding_inputs": 4277,
+    "embedding_external_calls": 433,
+    "embedding_tokens": 3970961,
+    "note": "PaperWise store.query also calls Qwen embeddings internally; its token counter is stored by PaperWise if enabled."
+  },
+  "artifacts": {
+    "cases": "docs\\evaluations\\paperwise_vector_vs_memory_external_smoke\\cases.jsonl",
+    "results": "docs\\evaluations\\paperwise_vector_vs_memory_external_smoke\\results.jsonl",
+    "summary": "docs\\evaluations\\paperwise_vector_vs_memory_external_smoke\\summary.json",
+    "embedding_cache": "docs\\evaluations\\paperwise_vector_vs_memory_external_smoke\\embedding_cache_text-embedding-v3.jsonl"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.1",
+  "fixture_seed": 20260721,
+  "case_count": 1000,
+  "selection_metric": "macro_f1_at_k",
+  "selected_method": "redis_hybrid",
+  "selected_thresholds": {
+    "l2": 0.05,
+    "l3": 0.03
+  },
+  "stages": {
+    "original_redis_hybrid": {
+      "precision_at_k": 0.3519,
+      "recall_at_k": 0.5542,
+      "f1_at_k": 0.4305,
+      "hit_rate_at_k": 0.8688,
+      "negative_rejection_rate": 0.03,
+      "latency_ms_mean": 22.1406
+    },
+    "normalized_before_threshold": {
+      "precision_at_k": 0.3592,
+      "recall_at_k": 0.5648,
+      "f1_at_k": 0.4391,
+      "hit_rate_at_k": 0.89,
+      "negative_rejection_rate": 0.065,
+      "latency_ms_mean": 28.9708
+    },
+    "final_redis_hybrid": {
+      "precision_at_k": 0.3612,
+      "recall_at_k": 0.5631,
+      "f1_at_k": 0.4401,
+      "hit_rate_at_k": 0.8888,
+      "negative_rejection_rate": 0.11,
+      "latency_ms_mean": 24.0615
+    },
+    "bm25_okapi": {
+      "precision_at_k": 0.3593,
+      "recall_at_k": 0.5667,
+      "f1_at_k": 0.4397,
+      "hit_rate_at_k": 0.73,
+      "negative_rejection_rate": 0.5,
+      "latency_ms_mean": 0.1247,
+      "index_build_ms": 0.3804
+    }
+  },
+  "final_vs_original": {
+    "precision_percentage_points": 0.93,
+    "recall_percentage_points": 0.89,
+    "f1_percentage_points": 0.96,
+    "hit_rate_percentage_points": 2.0,
+    "negative_rejection_percentage_points": 8.0
+  },
+  "final_vs_bm25": {
+    "precision_percentage_points": 0.19,
+    "recall_percentage_points": -0.36,
+    "f1_percentage_points": 0.04,
+    "hit_rate_percentage_points": 15.88
+  }
+}

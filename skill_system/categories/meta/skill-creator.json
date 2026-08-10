@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "skill-creator",
+  "category": "meta",
+  "short_description": "Create, test, or improve Codex skills and skill trigger behavior.",
+  "source_path": "C:\\Users\\30626\\.codex\\skills\\.system\\skill-creator",
+  "capability": "skill_creator",
+  "domain_terms": ["skill", "Skills", "Antenna Skills"],
+  "trigger_terms": ["生成", "测试输入", "skill触发", "主动调用", "Antenna Skills", "skill"],
+  "weak_context_terms": [],
+  "negative_terms": [],
+  "task_types": ["meta_skill"],
+  "inputs": ["user_input"],
+  "outputs": ["skill_plan"],
+  "risk_level": "low",
+  "requires_approval": false,
+  "adapter_binding": {"packet_type": null, "adapter_allowed": false}
+}

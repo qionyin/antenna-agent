@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "cst-control",
+  "category": "antenna.cst",
+  "short_description": "CST model creation, preflight, ports, boundaries, history, solver gate, and export diagnostics.",
+  "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\cst-control",
+  "capability": "cst_control",
+  "domain_terms": ["antenna", "天线", "CST", ".cst", "HFSS", "CPW", "microstrip", "solver", "仿真"],
+  "trigger_terms": ["CST", ".cst", "solver", "preflight", "port", "端口", "边界", "monitors", "export tree", "history", "boolean", "创建", "参数扫描", "dry-run", "仿真", "跑一下仿真", "S11不行"],
+  "weak_context_terms": ["先做preflight，不要实际运行", "The export tree is missing monitors.", "这个CPW馈电结构的端口怎么设置", "跑一下仿真看看结果"],
+  "negative_terms": ["CST-style", "card layout", "dashboard", "VSCode", "React"],
+  "task_types": ["cst_control", "cst_run", "simulation_debug"],
+  "inputs": ["geometry_contract", "model_json", "project_path"],
+  "outputs": ["run_manifest"],
+  "risk_level": "high",
+  "requires_approval": true,
+  "adapter_binding": {"packet_type": "run_manifest", "adapter_allowed": true}
+}

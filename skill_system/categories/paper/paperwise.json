@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "paperwise",
+  "category": "paper",
+  "short_description": "Read-only PaperWise reports, vector evidence, and graph evidence.",
+  "source_path": "C:\\Users\\30626\\.codex\\skills\\paperwise-main",
+  "capability": "paperwise_vector_library_reader",
+  "domain_terms": ["paper", "论文", "PaperWise"],
+  "trigger_terms": ["PaperWise", "论文", "paper", "复现", "证据", "evidence", "精读"],
+  "weak_context_terms": ["复现这篇论文", "把图里的尺寸整理出来", "这个paper里的geometry不完整"],
+  "negative_terms": ["机器学习论文", "综述", "翻译"],
+  "task_types": ["paper_evidence"],
+  "inputs": ["user_input"],
+  "outputs": ["evidence_pool"],
+  "risk_level": "low",
+  "requires_approval": false,
+  "adapter_binding": {"packet_type": null, "adapter_allowed": false}
+}

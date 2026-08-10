@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "definition": "Token counts of the serialized context JSON sent by each agent variant",
+  "tokenizer": "o200k_base",
+  "cases": 100,
+  "per_agent": [
+    {
+      "agent": "task_subagent",
+      "baseline_context_tokens": 133049,
+      "compressed_context_tokens": 40712,
+      "saved_context_tokens": 92337,
+      "context_compression_rate": 0.694
+    },
+    {
+      "agent": "module_reviewer",
+      "baseline_context_tokens": 133049,
+      "compressed_context_tokens": 13448,
+      "saved_context_tokens": 119601,
+      "context_compression_rate": 0.8989
+    },
+    {
+      "agent": "global_reviewer",
+      "baseline_context_tokens": 133049,
+      "compressed_context_tokens": 34587,
+      "saved_context_tokens": 98462,
+      "context_compression_rate": 0.74
+    },
+    {
+      "agent": "central_agent",
+      "baseline_context_tokens": 133049,
+      "compressed_context_tokens": 80078,
+      "saved_context_tokens": 52971,
+      "context_compression_rate": 0.3981
+    }
+  ],
+  "overall": {
+    "baseline_context_tokens": 532196,
+    "compressed_context_tokens": 168825,
+    "saved_context_tokens": 363371,
+    "context_compression_rate": 0.6828
+  },
+  "notes": [
+    "Counts include only each request's context object, serialized with compact UTF-8 JSON.",
+    "Counts exclude system prompts, output schema, decision policy, provider prefixes, and completions.",
+    "API cached_prompt_tokens varied by request, so prompt_tokens minus cached_prompt_tokens was not used."
+  ]
+}

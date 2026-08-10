@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "antenna-baseline-ablation-planner",
+  "category": "antenna.experiment",
+  "short_description": "Plan fair antenna baselines, ablations, sweeps, and optimizer comparisons.",
+  "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\antenna-baseline-ablation-planner",
+  "capability": "antenna_baseline_ablation_planner",
+  "domain_terms": ["antenna", "天线", "CST", "GWO", "PSO", "GA", "SIW", "array", "阵列"],
+  "trigger_terms": ["baseline", "baselines", "ablation", "消融", "compare", "fairly", "参数扫描", "队列", "小预算", "预算", "间距", "parameter bounds"],
+  "weak_context_terms": ["Need parameter bounds and a small budget first."],
+  "negative_terms": ["React", "frontend", "股票"],
+  "task_types": ["baseline_ablation"],
+  "inputs": ["experiment_contract", "user_input"],
+  "outputs": ["baseline_ablation_plan"],
+  "risk_level": "low",
+  "requires_approval": false,
+  "adapter_binding": {"packet_type": "run_manifest", "adapter_allowed": true}
+}

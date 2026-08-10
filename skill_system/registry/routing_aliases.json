@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "aliases": {
+    "paperwise": ["paperwise_vector_library_reader", "paperwise_report_reader"],
+    "antenna-research-ideation": ["antenna_research_ideation", "antenna_packet_adapter:geometry_contract"],
+    "antenna-research-idea-advisor": ["antenna_research_idea_advisor", "antenna_packet_adapter:idea_card"],
+    "antenna-research-reviewer": ["antenna_research_reviewer", "antenna_packet_adapter:next_iteration_plan"],
+    "antenna-claim-experiment-planner": ["antenna_claim_experiment_planner", "antenna_packet_adapter:experiment_contract"],
+    "antenna-result-to-claim": ["antenna_result_to_claim", "antenna_packet_adapter:claim_assessment"],
+    "cst-control": ["cst_control", "antenna_packet_adapter:run_manifest"],
+    "e-platform-cst": ["e_platform_cst", "cst_local"]
+  }
+}

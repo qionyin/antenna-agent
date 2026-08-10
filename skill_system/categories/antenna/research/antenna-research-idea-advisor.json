@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "antenna-research-idea-advisor",
+  "category": "antenna.research",
+  "short_description": "Evidence-aware antenna idea, novelty, graph evidence, and improvement advice.",
+  "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\antenna-research-idea-advisor",
+  "capability": "antenna_research_idea_advisor",
+  "domain_terms": ["antenna", "天线", "metasurface", "array", "MIMO", "gain", "增益", "ARBW", "轴比"],
+  "trigger_terms": ["idea", "想法", "创新", "新颖", "novel", "graph evidence", "改", "优化哪里", "值得", "靠谱"],
+  "weak_context_terms": ["增益太低，怎么改"],
+  "negative_terms": ["React", "frontend", "股票", "邮件"],
+  "task_types": ["idea_review"],
+  "inputs": ["user_input", "paperwise_evidence", "graph_evidence"],
+  "outputs": ["idea_card"],
+  "risk_level": "low",
+  "requires_approval": false,
+  "adapter_binding": {"packet_type": "idea_card", "adapter_allowed": true}
+}

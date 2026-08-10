@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "e-platform-cst",
+  "category": "antenna.cst",
+  "short_description": "Local E platform CST and antenna execution adapter selection.",
+  "source_path": "E:\\antenna skills",
+  "capability": "e_platform_cst",
+  "domain_terms": ["antenna", "天线", "E:\\antenna skills", "E:\\antenna skills-resault", "仿真", "CST"],
+  "trigger_terms": ["E:\\antenna skills", "E盘", "resault", "本地平台", "local antenna platform", "checkpoint", "失败队列"],
+  "weak_context_terms": ["结果目录在E盘那个resault下面"],
+  "negative_terms": ["E:\\论文", "React", "Word"],
+  "task_types": ["platform_inspect", "batch_plan"],
+  "inputs": ["user_input", "run_manifest"],
+  "outputs": ["platform_route"],
+  "risk_level": "medium",
+  "requires_approval": false,
+  "adapter_binding": {"packet_type": "run_manifest", "adapter_allowed": false}
+}

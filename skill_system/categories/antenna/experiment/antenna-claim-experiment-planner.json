@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "antenna-claim-experiment-planner",
+  "category": "antenna.experiment",
+  "short_description": "Convert antenna claims and ideas into measurable metrics, validation criteria, parameter bounds, and experiment plans.",
+  "source_path": "C:\\Users\\30626\\.codex\\skills\\Antenna Skills\\antenna-claim-experiment-planner",
+  "capability": "antenna_claim_experiment_planner",
+  "domain_terms": ["antenna", "天线", "S11", "gain", "bandwidth", "轴比", "ARBW", "GWO", "CNN"],
+  "trigger_terms": ["claim", "实验", "experiment", "validation", "可验证", "成功标准", "指标", "parameter bounds", "small budget", "计划", "流程", "失败条件", "优化一下参数", "带宽不够"],
+  "weak_context_terms": ["Need parameter bounds and a small budget first.", "把这个idea变成实验", "先不要跑CST，只生成计划", "优化一下参数", "带宽不够，优化一下"],
+  "negative_terms": ["React", "frontend", "股票"],
+  "task_types": ["claim_plan", "optimization"],
+  "inputs": ["user_input", "idea_card"],
+  "outputs": ["experiment_contract"],
+  "risk_level": "low",
+  "requires_approval": false,
+  "adapter_binding": {"packet_type": "experiment_contract", "adapter_allowed": true}
+}

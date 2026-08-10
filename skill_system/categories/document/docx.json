@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "id": "docx",
+  "category": "document",
+  "short_description": "Word document creation and formatting.",
+  "source_path": "C:\\Users\\30626\\.codex\\skills\\docx",
+  "capability": "docx",
+  "domain_terms": ["Word", "docx", "报告"],
+  "trigger_terms": ["Word", "docx", "排版", "模板"],
+  "weak_context_terms": [],
+  "negative_terms": ["antenna", "天线"],
+  "task_types": ["document"],
+  "inputs": ["document_path"],
+  "outputs": ["docx"],
+  "risk_level": "low",
+  "requires_approval": false,
+  "adapter_binding": {"packet_type": null, "adapter_allowed": false}
+}
