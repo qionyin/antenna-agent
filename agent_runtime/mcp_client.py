@@ -4,8 +4,9 @@ import asyncio
 import json
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any
+from typing import Any, Awaitable, Callable, TypeVar
 
 from mcp import ClientSession
 from mcp.client.stdio import StdioServerParameters, stdio_client
@@ -13,6 +14,7 @@ from mcp.client.stdio import StdioServerParameters, stdio_client
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SERVER_SCRIPT = PROJECT_ROOT / "adapters" / "mcp_server.py"
+T = TypeVar("T")
 
 
 class SyncMCPClient:
@@ -36,10 +38,19 @@ class SyncMCPClient:
         self.timeout_seconds = timeout_seconds
 
     def list_tools(self) -> list[dict[str, Any]]:
-        return asyncio.run(self._list_tools())
+        return self._run_sync(self._list_tools)
 
     def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> Any:
-        return asyncio.run(self._call_tool(name, dict(arguments or {})))
+        return self._run_sync(lambda: self._call_tool(name, dict(arguments or {})))
+
+    @staticmethod
+    def _run_sync(factory: Callable[[], Awaitable[T]]) -> T:
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(factory())
+        with ThreadPoolExecutor(max_workers=1, thread_name_prefix="mcp-sync") as executor:
+            return executor.submit(lambda: asyncio.run(factory())).result()
 
     def _server_parameters(self) -> StdioServerParameters:
         env = os.environ.copy()

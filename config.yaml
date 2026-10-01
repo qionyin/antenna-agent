@@ -47,3 +47,10 @@ embedding:
   model_name: "text-embedding-v4"
   dimensions: 1024
   timeout_seconds: 30
+learning:
+  enabled: true
+  evolution_enabled: false
+  domain_knowledge_enabled: false
+  l2_project_facts:
+    - namespace: "project"
+      fact: "默认使用 CST 仿真，实测数据优先"

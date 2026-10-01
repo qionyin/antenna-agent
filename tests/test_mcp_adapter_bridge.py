@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,6 +11,19 @@ from agent_runtime.mcp_client import SyncMCPClient
 
 
 class MCPAdapterBridgeTests(unittest.TestCase):
+    def test_sync_client_can_run_inside_an_active_event_loop(self):
+        client = SyncMCPClient()
+
+        async def fake_tools():
+            return [{"name": "fake"}]
+
+        client._list_tools = fake_tools
+
+        async def invoke():
+            return client.list_tools()
+
+        self.assertEqual(asyncio.run(invoke()), [{"name": "fake"}])
+
     def test_mcp_server_lists_legacy_adapter_tools(self) -> None:
         tools = SyncMCPClient(timeout_seconds=20).list_tools()
         names = {tool["name"] for tool in tools}

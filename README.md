@@ -40,3 +40,33 @@ $env:API_KEY = "..."  # Qwen embedding
 ```
 
 真实 CST、外部 LLM 和数据外发仍受审批与 Gate 约束。本地路径可在 `config.yaml` 中按环境调整。
+
+## 学习与自进化开关
+
+V2.3.1 将学习记忆实现独立到 `agent_learning/`。当前默认配置保留任务经验沉淀，关闭领域知识链和自进化执行链：
+
+```yaml
+learning:
+  enabled: true
+  domain_knowledge_enabled: false
+  evolution_enabled: false
+```
+
+- `enabled`：控制 Episode、Experience 和学习上下文。
+- `domain_knowledge_enabled`：控制原文池、Evidence、Domain Knowledge、聚类、创新 Gate 和 Wiki。
+- `evolution_enabled`：控制评测、提案、低风险 alias 修改、独立复测和回滚。
+
+自进化系统不会仅因代码存在而运行，必须在配置中显式设置：
+
+```yaml
+learning:
+  evolution_enabled: true
+```
+
+也可临时使用环境变量：
+
+```powershell
+$env:LEARNING_EVOLUTION_ENABLED = "true"
+```
+
+高风险 Prompt、阈值、知识晋级和代码修改不会自动执行。外部 LLM 仅生成候选建议，并复用中枢 Agent 的模型配置。

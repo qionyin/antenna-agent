@@ -29,6 +29,7 @@ docs/evaluations/**/*.jsonl
 docs/evaluations/**/*.ndjson
 docs/evaluations/**/*.xlsx
 docs/evaluations/**/previews*/
+tests/evaluation/v2_3_baseline_100/baseline_results.jsonl
 
 work/*.png
 work/*.jpg
@@ -38,9 +39,13 @@ work/skill_router_eval/
 work/skill_router_real_eval/
 work/skill_router_v222_fresh_eval/
 work/*_eval_report.json
+work/full_system_*.json
 work/ui_preview*.html
 
 web/frontend/node_modules/
 web/frontend/dist/
 web/frontend/test-results/
 web/frontend/playwright-report/
+
+# Local reference project used only during V2.3.1 fusion work.
+self-evolving-kb-master/

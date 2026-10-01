@@ -1673,6 +1673,34 @@ body {
   gap: 12px;
 }
 
+.learningMetrics {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.learningStatusRows,
+.learningTrace {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.learningStatusRows > div,
+.learningTrace > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--ui-line);
+  background: var(--ui-panel-soft);
+}
+
+.learningPolicy {
+  color: var(--ui-muted);
+  margin: 0 0 14px;
+}
+
 .overviewGrid .metric {
   min-height: 92px;
   background: var(--ui-panel);
@@ -1865,6 +1893,7 @@ body {
   .evidenceGrid,
   .metricsBand,
   .overviewGrid,
+  .learningMetrics,
   .statusGrid,
   .compactStatus,
   .skillBuckets,

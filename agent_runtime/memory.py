@@ -4,18 +4,27 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from .embedding import embed_text
+from agent_learning.repository import LearningMemoryRepositoryMixin
 from .redis_store import RedisStore
 from .utils import now_iso, stable_hash
 
 
 @dataclass
-class MemoryManager:
+class MemoryManager(LearningMemoryRepositoryMixin):
     l1_recent_turns: int = 20
     "none为临时存储，在config里设置redis配置"
     store: RedisStore | None = None
     l1: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
     l2: dict[str, dict[str, Any]] = field(default_factory=dict)
     long_term_sources: dict[str, dict[str, Any]] = field(default_factory=dict)
+    evidence: dict[str, dict[str, Any]] = field(default_factory=dict)
+    episodes: dict[str, dict[str, Any]] = field(default_factory=dict)
+    experiences: dict[str, dict[str, Any]] = field(default_factory=dict)
+    wiki_pages: dict[str, dict[str, Any]] = field(default_factory=dict)
+    evolution_runs: dict[str, dict[str, Any]] = field(default_factory=dict)
+    evolution_proposals: dict[str, dict[str, Any]] = field(default_factory=dict)
+    evolution_verifications: dict[str, dict[str, Any]] = field(default_factory=dict)
+    evolution_configs: dict[str, dict[str, Any]] = field(default_factory=dict)
     l3: dict[str, dict[str, Any]] = field(default_factory=dict)
     invalidated_cache_keys: list[str] = field(default_factory=list)
     embedder: Callable[[str], list[float]] = embed_text
@@ -35,39 +44,6 @@ class MemoryManager:
             return list(self.store.get_json(f"mem:l1:session:{session_id}", self.l1.get(session_id, [])))
         return list(self.l1.get(session_id, []))
 
-    def store_long_term_source(
-        self,
-        source_id: str,
-        content: str,
-        *,
-        metadata: dict[str, Any] | None = None,
-    ) -> str:
-        """Store raw source material pending extraction into a structured L2 memory."""
-        if not isinstance(source_id, str) or not source_id.strip():
-            raise ValueError("long-term source_id must be a non-empty string")
-        if not isinstance(content, str) or not content.strip():
-            raise ValueError("long-term source content must be a non-empty string")
-        if metadata is not None and not isinstance(metadata, dict):
-            raise TypeError("long-term source metadata must be a dictionary or None")
-        record = {
-            "schema_version": "1.0",
-            "source_id": source_id,
-            "status": "pending_l2_extraction",
-            "content": content,
-            "content_hash": stable_hash(content),
-            "metadata": dict(metadata or {}),
-            "updated_at": now_iso(),
-        }
-        self.long_term_sources[source_id] = record
-        if self.store is not None:
-            self.store.set_json(f"mem:source:long_term:{source_id}", record)
-        return source_id
-
-    def get_long_term_source(self, source_id: str) -> dict[str, Any] | None:
-        if self.store is not None:
-            return self.store.get_json(f"mem:source:long_term:{source_id}")
-        record = self.long_term_sources.get(source_id)
-        return dict(record) if record is not None else None
 
     "保存长期l2记忆，负责找回用户偏好、项目事实、长期约束。"
     def store_l2(
@@ -139,6 +115,7 @@ class MemoryManager:
             "l3_count": l3_count,
             "l2_cached": len(self.l2),
             "l3_cached": len(self.l3),
+            "learning": self.learning_snapshot(),
             "redis": self.store.health() if self.store is not None else {"available": False, "backend": "none"},
             "invalidated_cache_keys": list(self.invalidated_cache_keys),
         }
@@ -170,6 +147,8 @@ class MemoryManager:
         return self.embedder(text)
 
     def _l2_text(self, record: dict[str, Any]) -> str:
+        if record.get("memory_type") == "domain_knowledge":
+            return " ".join(str(record.get(key) or "") for key in ("subject", "relation", "object", "mechanism", "effect", "conditions", "parameters", "limits"))
         return f"{record.get('namespace', '')} {record.get('fact', '')}"
 
     def _l3_text(self, workflow_key: str, record: dict[str, Any]) -> str:

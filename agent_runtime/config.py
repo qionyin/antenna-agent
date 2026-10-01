@@ -46,6 +46,10 @@ class Settings:
     embedding_api_key_env: str = "API_KEY"
     embedding_dimensions: int | None = 1024
     embedding_timeout_seconds: int = 30
+    learning_enabled: bool = True
+    learning_evolution_enabled: bool = False
+    learning_domain_knowledge_enabled: bool = True
+    learning_l2_project_facts: list[dict[str, Any]] = field(default_factory=list)
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
@@ -65,6 +69,7 @@ def load_settings(config_path: str | Path = "config.yaml") -> Settings:
     retrieval = data.get("retrieval", {})
     llm = data.get("llm", {})
     embedding = data.get("embedding", {})
+    learning = data.get("learning", {})
     dimensions = os.getenv("EMBEDDING_DIMENSIONS", embedding.get("dimensions", Settings.embedding_dimensions))
 
     settings = Settings(
@@ -100,7 +105,11 @@ def load_settings(config_path: str | Path = "config.yaml") -> Settings:
         embedding_base_url=os.getenv("EMBEDDING_BASE_URL", embedding.get("base_url", Settings.embedding_base_url)),
         embedding_api_key_env=os.getenv("EMBEDDING_API_KEY_ENV", embedding.get("api_key_env", Settings.embedding_api_key_env)),
         embedding_dimensions=None if dimensions in {None, "", "null", "none"} else int(dimensions),
-        embedding_timeout_seconds=int(os.getenv("EMBEDDING_TIMEOUT_SECONDS", embedding.get("timeout_seconds", Settings.embedding_timeout_seconds))),
+    embedding_timeout_seconds=int(os.getenv("EMBEDDING_TIMEOUT_SECONDS", embedding.get("timeout_seconds", Settings.embedding_timeout_seconds))),
+        learning_enabled=str(os.getenv("LEARNING_MODULE_ENABLED", learning.get("enabled", Settings.learning_enabled))).lower() in {"1", "true", "yes", "on"},
+        learning_evolution_enabled=str(os.getenv("LEARNING_EVOLUTION_ENABLED", learning.get("evolution_enabled", Settings.learning_evolution_enabled))).lower() in {"1", "true", "yes", "on"},
+        learning_domain_knowledge_enabled=str(os.getenv("LEARNING_DOMAIN_KNOWLEDGE_ENABLED", learning.get("domain_knowledge_enabled", Settings.learning_domain_knowledge_enabled))).lower() in {"1", "true", "yes", "on"},
+        learning_l2_project_facts=list(learning.get("l2_project_facts") or []),
     )
     if not settings.allowed_tool_paths:
         settings.allowed_tool_paths = [

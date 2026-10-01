@@ -11,6 +11,7 @@ from agent_runtime.capability_registry import CapabilityRegistry
 from agent_runtime.config import Settings
 from agent_runtime.llm import LLMGenerationError
 from agent_runtime.memory import MemoryManager
+from agent_runtime.runtime_llm_config import runtime_llm_config
 from agent_runtime.scheduler import Scheduler
 from agent_runtime.streaming import StreamPublisher
 
@@ -77,6 +78,28 @@ def modeling_request(root: Path, *, include_port: bool = True) -> dict:
 
 
 class ParentSubgraphIntegrationTests(unittest.TestCase):
+    def setUp(self) -> None:
+        previous = (
+            runtime_llm_config.enabled,
+            runtime_llm_config.base_url,
+            runtime_llm_config.api_key,
+            runtime_llm_config.model_name,
+        )
+        runtime_llm_config.enabled = False
+        self.addCleanup(
+            self._restore_runtime_llm,
+            previous,
+        )
+
+    @staticmethod
+    def _restore_runtime_llm(previous: tuple[bool, str, str, str]) -> None:
+        (
+            runtime_llm_config.enabled,
+            runtime_llm_config.base_url,
+            runtime_llm_config.api_key,
+            runtime_llm_config.model_name,
+        ) = previous
+
     @staticmethod
     def scheduler(root: str) -> Scheduler:
         return Scheduler(

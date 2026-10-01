@@ -1788,8 +1788,13 @@ class RuntimeCoreTests(unittest.TestCase):
 
 
     def test_scheduler_has_one_physical_execution_chain(self):
-        source = inspect.getsource(Scheduler)
-        self.assertEqual(source.count("self.cst_real.run_single("), 1)
+        from agent_runtime.orchestration import DynamicExecutionServiceMixin
+
+        scheduler_source = inspect.getsource(Scheduler)
+        execution_source = inspect.getsource(DynamicExecutionServiceMixin)
+        source = scheduler_source + execution_source
+        self.assertEqual(scheduler_source.count("self.cst_real.run_single("), 0)
+        self.assertEqual(execution_source.count("self.cst_real.run_single("), 1)
         self.assertNotIn("_finish_v2_failure", source)
         self.assertNotIn("_run_v2_agent", source)
         self.assertNotIn("_run_packet_stage", source)

@@ -1,5 +1,7 @@
 # 当前唯一执行架构
 
+模块边界和目录职责见 `docs/modular_architecture.md`。该拆分不改变本文件描述的唯一执行链。
+
 ## 启动入口
 
 ```text

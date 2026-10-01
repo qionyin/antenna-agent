@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 from agent_runtime.audit import AuditLog
 from agent_runtime.approval import ApprovalManager
@@ -15,6 +16,7 @@ from agent_runtime.runtime_llm_config import runtime_llm_config
 from agent_runtime.redis_store import RedisStore
 from agent_runtime.scheduler import Scheduler
 from agent_runtime.streaming import StreamPublisher
+from web.routes import create_learning_router
 
 try:
     from fastapi import FastAPI
@@ -373,6 +375,8 @@ if FastAPI is not None:
         return {
             "l1_sessions": len(memory.l1),
         }
+
+    app.include_router(create_learning_router(lambda: scheduler))
 
     @app.post("/maintenance/audit")
     def run_audit_maintenance(payload: dict | None = None):

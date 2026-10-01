@@ -51,7 +51,12 @@ class WebApiTests(unittest.TestCase):
                 "source": runtime_llm_config.source,
             },
         }
-        api.settings = Settings(workspace_root=root, logs_root=root, paperwise_root=str(Path(root) / "paperwise"))
+        api.settings = Settings(
+            workspace_root=root,
+            logs_root=root,
+            paperwise_root=str(Path(root) / "paperwise"),
+            learning_evolution_enabled=True,
+        )
         api.blackboard = Blackboard(root)
         api.audit = AuditLog(root)
         api.stream = StreamPublisher()
@@ -117,6 +122,211 @@ class WebApiTests(unittest.TestCase):
         self.assertEqual(client.get("/health").status_code, 200)
         capabilities = client.get("/capabilities").json()["capabilities"]
         self.assertIn("skill_packet_protocol", capabilities)
+
+    def test_v23_learning_source_compile_and_innovation_gate_api(self):
+        with tempfile.TemporaryDirectory() as root:
+            original = self._with_isolated_api_state(root)
+            try:
+                client = TestClient(api.app)
+                created = client.post(
+                    "/learning/sources",
+                    json={
+                        "source_id": "paper-api-1",
+                        "content": "At 3.5 GHz, GWO optimizes slot length and improves U-slot patch antenna bandwidth in simulation.",
+                        "metadata": {
+                            "source_type": "paper",
+                            "source_ref": "paperwise/paper-api-1/report.md",
+                            "locator": "page 4",
+                            "evidence_type": "paper_fact",
+                        },
+                    },
+                )
+                self.assertEqual(created.status_code, 200, created.text)
+                compiled = client.post("/learning/sources/paper-api-1/compile")
+                self.assertEqual(compiled.status_code, 200, compiled.text)
+                body = compiled.json()
+                self.assertTrue(body["evidence_units"])
+                self.assertTrue(body["knowledge_candidates"])
+                knowledge = client.get("/learning/knowledge", params={"status": "candidate"}).json()
+                self.assertTrue(knowledge)
+
+                innovation = client.post(
+                    "/learning/innovations/evaluate",
+                    json={
+                        "baseline_refs": ["paper-api-1"],
+                        "known_gap": "robustness not evaluated",
+                        "proposed_delta": "add robustness objective",
+                        "mechanism_hypothesis": "reduce input impedance sensitivity",
+                        "modelable_parameters": ["feed_offset"],
+                        "metrics": ["S11"],
+                        "baselines": ["single objective"],
+                        "ablations": ["remove robustness objective"],
+                        "falsification_condition": "no improvement",
+                        "evidence_refs": [body["evidence_units"][0]["evidence_id"]],
+                    },
+                )
+                self.assertEqual(innovation.status_code, 200, innovation.text)
+                self.assertEqual(innovation.json()["status"], "experiment_ready")
+                self.assertFalse(innovation.json()["novelty_claim_allowed"])
+            finally:
+                self._restore_api_state(original)
+
+    def test_domain_knowledge_switch_returns_403_and_keeps_experience_routes(self):
+        with tempfile.TemporaryDirectory() as root:
+            original = self._with_isolated_api_state(root)
+            api.scheduler.learning.domain_knowledge_enabled = False
+            try:
+                client = TestClient(api.app)
+                requests = [
+                    ("post", "/learning/sources", {}),
+                    ("post", "/learning/paperwise/ingest", {}),
+                    ("post", "/learning/sources/source-1/compile", {}),
+                    ("get", "/learning/knowledge", None),
+                    ("post", "/learning/knowledge/k1/review", {}),
+                    ("post", "/learning/knowledge/k1/promote", {}),
+                    ("post", "/learning/clusters", {}),
+                    ("post", "/learning/innovations/evaluate", {}),
+                    ("post", "/learning/wiki/rebuild", {}),
+                    ("get", "/learning/wiki", None),
+                    ("get", "/learning/wiki/page-1", None),
+                    ("get", "/learning/graph", None),
+                ]
+                for method, path, payload in requests:
+                    response = getattr(client, method)(path, json=payload) if payload is not None else getattr(client, method)(path)
+                    self.assertEqual(response.status_code, 403, (method, path, response.text))
+                    self.assertEqual(response.json(), {"error": "domain_knowledge_disabled"})
+                self.assertEqual(client.get("/learning/experiences").status_code, 200)
+                snapshot = client.get("/learning").json()
+                self.assertEqual(snapshot["domain_knowledge"]["total"], 0)
+            finally:
+                self._restore_api_state(original)
+
+    def test_learning_evolution_extraction_api_persists_proposals(self):
+        with tempfile.TemporaryDirectory() as root:
+            original = self._with_isolated_api_state(root)
+            try:
+                client = TestClient(api.app)
+                response = client.post(
+                    "/learning/evolution/evaluate-extraction",
+                    json={
+                        "cases": [{
+                            "case_id": "api-extraction-gap",
+                            "text": "A patch antenna operates at 3.5 GHz.",
+                            "expected_entities": ["microstrip_patch_antenna"],
+                            "expected_relations": [["microstrip_patch_antenna", "affects", "bandwidth"]],
+                        }]
+                    },
+                )
+                self.assertEqual(response.status_code, 200, response.text)
+                result = response.json()
+                self.assertTrue(result["proposal_ids"])
+                proposals = client.get("/learning/evolution/proposals").json()
+                self.assertEqual({item["proposal_id"] for item in proposals}, set(result["proposal_ids"]))
+            finally:
+                self._restore_api_state(original)
+
+    def test_learning_evolution_run_api_applies_and_verifies_safe_alias(self):
+        with tempfile.TemporaryDirectory() as root:
+            original = self._with_isolated_api_state(root)
+            try:
+                client = TestClient(api.app)
+                response = client.post(
+                    "/learning/evolution/run-extraction",
+                    json={
+                        "cases": [{
+                            "case_id": "api-safe-alias",
+                            "text": "A U shaped slot patch uses GWO to improve bandwidth.",
+                            "expected_entities": ["u_slot_patch_antenna", "gwo", "bandwidth"],
+                            "expected_relations": [
+                                ["u_slot_patch_antenna", "uses_algorithm", "gwo"],
+                                ["gwo", "increases", "bandwidth"],
+                            ],
+                            "suggested_aliases": {"u_slot_patch_antenna": ["u shaped slot patch"]},
+                        }],
+                        "verification_cases": [{
+                            "case_id": "api-safe-alias-holdout",
+                            "text": "The U shaped slot patch adopts GWO and improves bandwidth.",
+                            "expected_entities": ["u_slot_patch_antenna", "gwo", "bandwidth"],
+                            "expected_relations": [
+                                ["u_slot_patch_antenna", "uses_algorithm", "gwo"],
+                                ["gwo", "increases", "bandwidth"],
+                            ],
+                        }],
+                        "auto_apply_low_risk": True,
+                        "use_external_llm": False,
+                    },
+                )
+                self.assertEqual(response.status_code, 200, response.text)
+                result = response.json()
+                self.assertEqual(result["status"], "verified_kept")
+                self.assertTrue(result["mutation_applied"])
+                self.assertGreater(result["after"]["summary"]["f1"], result["baseline"]["summary"]["f1"])
+            finally:
+                self._restore_api_state(original)
+
+    def test_v23_paperwise_report_ingest_api_preserves_source_and_compiles(self):
+        with tempfile.TemporaryDirectory() as root:
+            paperwise_root = Path(root) / "paperwise"
+            report_dir = paperwise_root / "outputs" / "paper-001"
+            report_dir.mkdir(parents=True)
+            report_path = report_dir / "report.md"
+            source_text = "# U-slot patch antenna\nAt 3.5 GHz, GWO improves impedance bandwidth by changing slot length."
+            report_path.write_text(source_text, encoding="utf-8")
+            original = self._with_isolated_api_state(root)
+            api.settings.paperwise_root = str(paperwise_root)
+            api.scheduler.paperwise = api.scheduler.paperwise.__class__(paperwise_root)
+            try:
+                client = TestClient(api.app)
+                response = client.post(
+                    "/learning/paperwise/ingest",
+                    json={"report_path": str(report_path), "source_id": "paperwise-api-source", "compile": True},
+                )
+                self.assertEqual(response.status_code, 200, response.text)
+                body = response.json()
+                self.assertEqual(body["source"]["status"], "extracted")
+                self.assertEqual(body["source"]["content"], source_text)
+                self.assertTrue(body["compiled"]["evidence_units"])
+                self.assertTrue(body["compiled"]["knowledge_candidates"])
+            finally:
+                self._restore_api_state(original)
+
+    def test_v23_graph_api_reads_existing_paperwise_graph_without_redis_projection(self):
+        with tempfile.TemporaryDirectory() as root:
+            paperwise_root = Path(root) / "paperwise"
+            graph_dir = paperwise_root / "outputs" / "graph"
+            graph_dir.mkdir(parents=True)
+            graph_path = graph_dir / "graph.json"
+            graph_path.write_text(
+                json.dumps(
+                    {
+                        "nodes": [
+                            {"id": "p1", "name": "Paper One", "type": "Paper"},
+                            {"id": "a1", "name": "GWO", "type": "Algorithm"},
+                        ],
+                        "edges": [
+                            {"source": "p1", "relation": "uses_algorithm", "target": "a1", "evidence_text": "Paper One uses GWO"}
+                        ],
+                    },
+                    ensure_ascii=False,
+                ),
+                encoding="utf-8",
+            )
+            original = self._with_isolated_api_state(root)
+            api.settings.paperwise_root = str(paperwise_root)
+            api.scheduler.paperwise = api.scheduler.paperwise.__class__(paperwise_root)
+            try:
+                client = TestClient(api.app)
+                response = client.get("/learning/graph")
+                self.assertEqual(response.status_code, 200, response.text)
+                body = response.json()
+                self.assertEqual(body["path"], str(graph_path))
+                self.assertTrue(body["read_only"])
+                self.assertEqual(api.scheduler.memory.store, None)
+                rebuilt = client.post("/learning/wiki/rebuild")
+                self.assertEqual(rebuilt.status_code, 200, rebuilt.text)
+                self.assertEqual(rebuilt.json()["knowledge_graph"], "not_created; use existing PaperWise or antenna research graph")
+            finally:
+                self._restore_api_state(original)
 
     def test_runtime_llm_settings_do_not_echo_api_key(self):
         client = TestClient(api.app)

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import {
   Activity,
   Bot,
+  BrainCircuit,
   Braces,
   CheckCircle2,
   FileText,
@@ -21,6 +22,10 @@ import {
   XCircle
 } from "lucide-react";
 import "./styles.css";
+import { List, Metric } from "./components/Common";
+import { LearningPage } from "./pages/LearningPage";
+import { EvidencePage } from "./pages/EvidencePage";
+import { LogsPage, ReportsPage, SettingsPage } from "./pages/SupportPages";
 
 const API = "http://127.0.0.1:8000";
 const PLACEHOLDER_PATHS = new Set([
@@ -530,6 +535,10 @@ function App() {
   const [stepCentralDrafts, setStepCentralDrafts] = useState({});
   const [stepCentralBusy, setStepCentralBusy] = useState("");
   const [selectedWorkflowNodeId, setSelectedWorkflowNodeId] = useState("");
+  const [learningSnapshot, setLearningSnapshot] = useState({});
+  const [taskLearning, setTaskLearning] = useState({});
+  const [learningKnowledge, setLearningKnowledge] = useState([]);
+  const [learningExperiences, setLearningExperiences] = useState([]);
 
   const metadata = task?.task_metadata || {};
   const results = metadata.results || {};
@@ -584,6 +593,9 @@ function App() {
     setLlmModelName(nextLlmSettings.model_name || "");
     setLlmEmbeddingModelName(nextLlmSettings.embedding_model_name || "text-embedding-v3");
     setTasks(await getJson("/tasks", []));
+    setLearningSnapshot(await getJson("/learning", {}));
+    setLearningKnowledge(await getJson("/learning/knowledge?limit=20", []));
+    setLearningExperiences(await getJson("/learning/experiences?limit=20", []));
     if (task?.task_id) {
       await refreshTask(task.task_id);
     }
@@ -599,6 +611,7 @@ function App() {
     setReports(await getJson(`/tasks/${taskId}/reports`, []));
     const actionData = await getJson(`/tasks/${taskId}/available-actions`, { actions: [] });
     setActions(actionData.actions || []);
+    setTaskLearning(await getJson(`/tasks/${taskId}/learning`, {}));
   }
 
   async function createTask() {
@@ -812,6 +825,7 @@ function App() {
         <button className={view === "workflow" ? "activeNav" : ""} onClick={() => openView("workflow")}><Workflow size={17} /> 工作流</button>
         <button className={view === "dashboard" ? "activeNav" : ""} onClick={() => openView("dashboard")}><Gauge size={17} /> 总览</button>
         <button className={view === "evidence" ? "activeNav" : ""} onClick={() => openView("evidence")}><ShieldCheck size={17} /> PaperWise</button>
+        <button className={view === "learning" ? "activeNav" : ""} onClick={() => openView("learning")}><BrainCircuit size={17} /> 学习与知识</button>
         <button className={view === "reports" ? "activeNav" : ""} onClick={() => openView("reports")}><FileText size={17} /> 报告</button>
         <button className={view === "logs" ? "activeNav" : ""} onClick={() => openView("logs")}><Activity size={17} /> 日志</button>
         <button className={view === "settings" ? "activeNav" : ""} onClick={() => openView("settings")}><KeyRound size={17} /> 设置</button>
@@ -1107,6 +1121,8 @@ function App() {
           <EvidencePage
             evidencePool={evidencePool}
             evidenceSources={evidenceSources}
+            defaultEvidencePool={DEFAULT_EVIDENCE_POOL}
+            sourceLabels={EVIDENCE_SOURCE_LABELS}
             onRerunReview={rerunPaperwiseReview}
             reviewBusy={paperwiseReviewBusy}
             hasTask={Boolean(task?.task_id)}
@@ -1120,6 +1136,18 @@ function App() {
             artifacts={artifacts}
             task={task}
             metadata={metadata}
+            onBack={() => openView("dashboard")}
+          />
+        )}
+
+        {view === "learning" && (
+          <LearningPage
+            snapshot={learningSnapshot}
+            taskLearning={taskLearning}
+            knowledgeItems={learningKnowledge}
+            experienceItems={learningExperiences}
+            task={task}
+            onRefresh={refreshAll}
             onBack={() => openView("dashboard")}
           />
         )}
@@ -1572,289 +1600,6 @@ function RouteHistoryPanel({ history }) {
         ))}
       </div>
     </section>
-  );
-}
-
-function Metric({ label: name, value, suffix, icon: Icon }) {
-  return (
-    <div className="metric">
-      <span>{Icon ? <Icon size={15} /> : null}{name}</span>
-      <strong>{value}{suffix && value !== "not_available" ? ` ${suffix}` : ""}</strong>
-    </div>
-  );
-}
-
-function List({ items, render }) {
-  if (!items.length) return <p className="empty">暂无</p>;
-  return (
-    <ul className="denseList">
-      {items.map((item, index) => <li key={item.id || item.path || item.markdown_path || index}>{render(item)}</li>)}
-    </ul>
-  );
-}
-
-function EvidencePage({ evidencePool, evidenceSources, onRerunReview, reviewBusy, hasTask, onBack }) {
-  const llmReview = evidencePool.llm_review || {};
-  const vectorSource = evidencePool.internal_sources?.vector_library || {};
-  return (
-    <section className="pageStack">
-      <div className="pageHeader">
-        <div>
-          <h2>PaperWise 证据审查</h2>
-          <p>中枢派 evidence_retrieval_task_agent 召回候选，再派 evidence_relevance_review_agent 用 ReAct 审查相关性。</p>
-        </div>
-        <div className="pageActions">
-          <button disabled={!hasTask || reviewBusy} onClick={onRerunReview}>
-            <RefreshCw size={17} /> {reviewBusy ? "Reviewing..." : "重新用 LLM 审查"}
-          </button>
-          <button onClick={onBack}><Gauge size={17} /> 返回总览</button>
-        </div>
-      </div>
-      <section className="panel evidencePanel" id="paperwise-evidence">
-        <div className="sectionHead">
-          <h2>证据池摘要</h2>
-          <span>{evidencePool.status || "not_loaded"}</span>
-        </div>
-        <div className="evidenceSummary">
-          <strong>PaperWise 已只读接入：精读报告 + 创新</strong>
-          <p>精读报告区展示向量库召回块追溯到的源头论文；创新区展示图谱/LLM 候选和 gate 结论。</p>
-          <small>
-            审查模式：{evidencePool.review_mode || "not_loaded"} |
-            召回：{evidencePool.retrieval_agent || "not_loaded"} |
-            审查：{evidencePool.review_agent || "not_loaded"}
-          </small>
-          <small>
-            LLM attempted: {String(Boolean(llmReview.attempted))} |
-            success: {String(Boolean(llmReview.success))} |
-            model: {llmReview.model || "not_configured"} |
-            expanded: {llmReview.expanded_candidate_count || 0}
-          </small>
-          {llmReview.error && <small className="missingReason">LLM error: {llmReview.error}</small>}
-          <small>
-            Vector backend: {vectorSource.retrieval_backend || "not_loaded"} |
-            chunks: {vectorSource.chunk_count || 0} |
-            papers: {vectorSource.paper_count || 0}
-          </small>
-          {vectorSource.vector_query_error && <small className="missingReason">Vector fallback reason: {vectorSource.vector_query_error}</small>}
-          {evidencePool.gate_summary && (
-            <small>
-              Gate：采用 {evidencePool.gate_summary.adopted || 0} |
-              阻塞 {evidencePool.gate_summary.blocked || 0} |
-              待补证据 {evidencePool.gate_summary.needs_more_evidence || 0}
-            </small>
-          )}
-          {evidencePool.accelerator_policy && (
-            <small>
-              规则：精读报告按本地硬约束和可复现排序；创新需 LLM 语义审查；所有来源最终由 gate/reviewer 采用裁决。
-            </small>
-          )}
-        </div>
-        <EvidenceReview review={evidencePool.react_review || DEFAULT_EVIDENCE_POOL.react_review} />
-        <div className="evidenceGrid evidenceGridTwo">
-          <EvidenceSource
-            name={EVIDENCE_SOURCE_LABELS.deep_read_papers}
-            source={evidenceSources.deep_read_papers || evidenceSources.reports || DEFAULT_EVIDENCE_POOL.sources.deep_read_papers || { status: "missing", items: [] }}
-            variant="primary"
-          />
-          <div className="innovationColumn">
-            <EvidenceSource
-              name={EVIDENCE_SOURCE_LABELS.graph_library}
-              source={evidenceSources.graph_library || DEFAULT_EVIDENCE_POOL.sources.graph_library || { status: "missing", items: [] }}
-            />
-            {(evidenceSources.llm_semantic_expansion?.items || []).length > 0 && (
-              <EvidenceSource
-                name={EVIDENCE_SOURCE_LABELS.llm_semantic_expansion}
-                source={evidenceSources.llm_semantic_expansion}
-              />
-            )}
-          </div>
-        </div>
-      </section>
-    </section>
-  );
-}
-
-function ReportsPage({ reports, artifacts, task, metadata, onBack }) {
-  return (
-    <section className="pageStack">
-      <div className="pageHeader">
-        <div>
-          <h2>任务报告</h2>
-          <p>{metadata.task_title || task?.task_id || "未选择任务"}</p>
-        </div>
-        <button onClick={onBack}><Gauge size={17} /> 返回总览</button>
-      </div>
-      <section className="columns">
-        <section className="panel">
-          <div className="sectionHead">
-            <h2>报告入口</h2>
-            <span>{reports.length}</span>
-          </div>
-          <List items={reports} render={(item) => `${item.report_type}: ${item.markdown_path || item.html_path}`} />
-        </section>
-        <section className="panel">
-          <div className="sectionHead">
-            <h2>报告相关产物</h2>
-            <span>{artifacts.length}</span>
-          </div>
-          <List items={artifacts.filter((item) => item.artifact_type === "report" || String(item.name || "").includes("report"))} render={(item) => `${item.name || item.artifact_type}: ${item.path}`} />
-        </section>
-      </section>
-    </section>
-  );
-}
-
-function LogsPage({ logs, onBack }) {
-  return (
-    <section className="pageStack">
-      <div className="pageHeader">
-        <div>
-          <h2>实时日志</h2>
-          <p>按时间查看 subagent 执行、审查和中枢状态更新。</p>
-        </div>
-        <button onClick={onBack}><Gauge size={17} /> 返回总览</button>
-      </div>
-      <section className="panel">
-        <div className="sectionHead">
-          <h2>日志明细</h2>
-          <span>{logs.length}</span>
-        </div>
-        <List items={logs.slice(-160)} render={(item) => `${item.sequence_id || ""} ${item.node_id || ""} ${item.status || ""} ${item.ui_safe_message || item.message || ""}`} />
-      </section>
-    </section>
-  );
-}
-
-function SettingsPage({
-  llmSettings,
-  llmBaseUrl,
-  setLlmBaseUrl,
-  llmModelName,
-  setLlmModelName,
-  llmEmbeddingModelName,
-  setLlmEmbeddingModelName,
-  llmApiKey,
-  setLlmApiKey,
-  saveRuntimeLlmSettings,
-  disableRuntimeLlm,
-  onBack
-}) {
-  return (
-    <section className="pageStack">
-      <div className="pageHeader">
-        <div>
-          <h2>运行设置</h2>
-          <p>前端配置的外接 LLM 优先用于 evidence_relevance_review_agent；未配置或调用失败时回到 local_react_fallback。</p>
-        </div>
-        <button onClick={onBack}><Gauge size={17} /> 返回总览</button>
-      </div>
-      <section className="panel">
-        <div className="sectionHead">
-          <h2>外接 LLM</h2>
-          <span>{llmSettings.enabled ? "enabled" : "disabled"}</span>
-        </div>
-        <div className="formGrid">
-          <label>
-            <span>Base URL</span>
-            <input value={llmBaseUrl} onChange={(event) => setLlmBaseUrl(event.target.value)} placeholder="https://example.com/v1" />
-          </label>
-          <label>
-            <span>Chat Model</span>
-            <input value={llmModelName} onChange={(event) => setLlmModelName(event.target.value)} placeholder="gpt-4.1 / qwen-plus / ..." />
-          </label>
-          <label>
-            <span>Embedding Model</span>
-            <input value={llmEmbeddingModelName} onChange={(event) => setLlmEmbeddingModelName(event.target.value)} placeholder="text-embedding-v3" />
-          </label>
-          <label className="wide">
-            <span>API Key</span>
-            <input type="password" value={llmApiKey} onChange={(event) => setLlmApiKey(event.target.value)} placeholder={llmSettings.api_key_configured ? "已配置，留空表示继续使用当前 key" : "请输入 API Key"} />
-          </label>
-        </div>
-        <div className="toolbar">
-          <button className="primary" onClick={saveRuntimeLlmSettings}><KeyRound size={17} /> 保存并启用</button>
-          <button onClick={disableRuntimeLlm}><XCircle size={17} /> 禁用</button>
-          <span className="settingsHint">API Key 不回显，只保存在当前后端进程内存中。</span>
-        </div>
-      </section>
-    </section>
-  );
-}
-
-function EvidenceSource({ name, source, variant = "" }) {
-  const roles = source.roles || [];
-  const items = source.items || source.candidates || source.sample_relations || [];
-  const count = source.count ?? source.chunk_count ?? source.relation_count ?? source.node_count ?? 0;
-  const hiddenCount = Math.max(0, items.length - 10);
-  return (
-    <div className={`evidenceSource ${variant} ${source.status || "missing"}`}>
-      <div className="evidenceSourceHead">
-        <strong>{name}</strong>
-        <span>{source.status || "missing"}</span>
-      </div>
-      <p>{source.description || source.reason || source.label || "insufficient_evidence"}</p>
-      <div className="roleLine">{roles.map((role) => <span key={role}>{role}</span>)}</div>
-      <small>{source.support_level || source.evidence_grade || "insufficient_evidence"} | {count} items</small>
-      {source.review_requirement && <small>审查要求：{source.review_requirement}</small>}
-      {(source.accepted_count !== undefined || source.rejected_count !== undefined || source.uncertain_count !== undefined) && (
-        <small>接受 {source.accepted_count || 0} | 拒绝 {source.rejected_count || 0} | 不确定 {source.uncertain_count || 0}</small>
-      )}
-      {items.length < 10 && <small>当前只显示 {items.length} 条：后端只召回到这么多候选，或被本地硬约束过滤。</small>}
-      {hiddenCount > 0 && <small>另有 {hiddenCount} 条未显示；本页最多展示前 10 条。</small>}
-      {source.path && <small>{source.path}</small>}
-      {source.reason && <small className="missingReason">{source.reason}</small>}
-      <ul>
-        {items.slice(0, 10).map((item, index) => (
-          <li key={item.path || index}>
-            <b>{item.display_title || item.title || item.target_title || item.source || item.relation || "evidence"}</b>
-            {item.original_title && item.original_title !== item.display_title && <small>原题：{item.original_title}</small>}
-            <span>{item.description || item.snippet || item.path || item.target_arxiv || ""}</span>
-            {item.trace_sources?.length > 0 && <small>来源追溯：{item.trace_sources.map((trace) => trace.type).join(" + ")}</small>}
-            {item.paper_path && <small>源头论文：{item.paper_path}</small>}
-            {item.react_review && <small>{item.react_review.decision}: {item.react_review.reason}</small>}
-            {item.evidence_gate && (
-              <small className={item.evidence_gate.adoption_decision === "adopt" ? "gatePass" : "gateWarn"}>
-                Gate {item.evidence_gate.adoption_decision}: {item.evidence_gate.reason}
-              </small>
-            )}
-            {item.evidence_gate?.blockers?.length > 0 && <small className="missingReason">阻塞：{item.evidence_gate.blockers.join(", ")}</small>}
-            {item.evidence_gate?.warnings?.length > 0 && <small>待确认：{item.evidence_gate.warnings.join(", ")}</small>}
-            <em>{item.level || item.evidence_grade || item.status || item.relation || "unknown"}</em>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function EvidenceReview({ review }) {
-  const accepted = review.accepted || [];
-  const rejected = review.rejected || [];
-  const uncertain = review.uncertain || [];
-  const gaps = review.evidence_gaps || [];
-  if (!accepted.length && !rejected.length && !uncertain.length && !gaps.length) return null;
-  return (
-    <div className="reactReviewGrid">
-      <ReviewBucket title="已接受证据" items={accepted} />
-      <ReviewBucket title="已拒绝证据" items={rejected} />
-      <ReviewBucket title="不确定证据" items={uncertain} />
-      <div className="reviewBucket">
-        <strong>证据缺口</strong>
-        {gaps.length ? gaps.map((gap) => <small key={gap}>{gap}</small>) : <small>暂无</small>}
-      </div>
-    </div>
-  );
-}
-
-function ReviewBucket({ title, items }) {
-  return (
-    <div className="reviewBucket">
-      <strong>{title}</strong>
-      {items.slice(0, 4).map((item, index) => (
-        <small key={item.path || index}>{item.display_title || item.title || item.source || "evidence"} | {item.reason}</small>
-      ))}
-      {!items.length && <small>暂无</small>}
-    </div>
   );
 }
 

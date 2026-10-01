@@ -1369,3 +1369,162 @@ frontend production build: passed
 
 本次迁移测试沿用现有 CST 模拟审批夹具，没有再次启动真实 CST solver；历史真实
 CST 调用点和审批规则未修改。
+
+## V2.3 - 学习记忆与领域理解基础闭环
+
+更新时间：2026-09-14
+
+本版本针对 API 型大模型“能召回但不能沉淀经验、能生成 idea 但缺少领域约束”的问题，增加了受控记忆改写层。它不修改模型参数，也不把一次 LLM 输出直接当作正式知识。
+
+| 项目 | 修改前 | V2.3 |
+|---|---|---|
+| 原文保存 | L2 事实中只有摘要和短摘录 | 独立 Redis 原文池，保存完整文本、哈希和来源定位 |
+| 领域知识 | 任意调用方可写入 L2 fact | 论文原文编译为带证据的 domain knowledge candidate |
+| 任务经验 | 只有完成工作流快照 | 终态任务保存 episode，并生成带错误归因的 experience candidate |
+| 知识状态 | active/inactive 为主 | candidate、validated、promoted、contradicted 等生命周期 |
+| 聚类 | 无受控学习聚类 | natural/semantic/random 候选聚类，固定 seed、温度和迭代边界 |
+| 冲突 | 新记录可能覆盖旧结论 | 保留相反关系并标记 conditional conflict |
+| 图谱来源 | PaperWise/研究图谱已存在，但 V2.3 曾误加 Redis 投影 | 已修复：不再创建第二张图谱，只读使用既有论文图谱 |
+| Wiki 来源 | 主要展示论文知识 | 论文事实 + 明确标记的 promoted 实践经验 |
+| 创新判断 | 主要依赖自由文本判断 | baseline-gap-delta + 论文/电磁/建模/实验四 Gate |
+| 任务上下文 | 普通 L2/L3 召回 | 动态计划只读取 promoted learning context |
+
+真实验证：
+
+```text
+V2.3 核心学习与边界测试 `tests.test_v23_learning` 12/12 passed；原 14/14 为旧组合口径，已拆分独立学习/进化模块测试。
+其中学习 API/图谱来源测试 3/3 passed
+既有运行回归 116/116 passed
+前端生产构建 passed
+真实 PaperWise report 导入 smoke：90 个证据单元、10 个候选知识，原文哈希一致
+```
+
+重要限制：本版证据编译器仍是确定性规则基线，不宣称已经实现完整的大模型领域理解；外部 LLM 抽取、真实历史反馈训练和大规模人工标注评估仍待后续版本。详见 `docs/v2_3_learning_memory_domain_understanding.md`。
+
+## 模块化重构 - 单链职责拆分
+
+更新时间：2026-09-30
+
+本次只调整代码组织，不新增第二套执行链，不改变公开 API、CST 审批、Skill Gate、MCP 协议和 PaperWise 只读边界。
+
+| 原堆积文件 | 重构前 | 重构后门面 | 迁出职责 |
+|---|---:|---:|---|
+| `agent_runtime/scheduler.py` | 2796 行 | 617 行 | 计划、中枢沟通、动态 action、证据审查、终态学习 |
+| `agent_runtime/langgraph_runtime.py` | 1728 行 | 471 行 | planning/execution/repair 节点、State、Retry |
+| `adapters/paperwise_adapter.py` | 1619 行 | 84 行 | 报告、向量库、图谱、查询画像 |
+| `agent_runtime/memory.py` | 457 行 | 151 行 | V2.3 Repository 存取 |
+| `agent_runtime/learning.py` | 783 行 | 27 行兼容入口 | extraction/review/clustering/innovation/wiki/service |
+| `web/frontend/src/App.jsx` | 1967 行 | 约 1600 行 | Evidence、Learning、Reports、Logs、Settings 页面和公共组件 |
+
+模块说明见 `docs/modular_architecture.md`。
+
+验证结果：
+
+```text
+Python 全量回归：174/174 passed
+MCP 回归：5/5 passed（含 Uvicorn 活动事件循环场景）
+前端生产构建：passed
+Playwright smoke：4/4 passed
+真实 HTTP 普通任务：completed，生成 dynamic plan 和 Episode
+模拟 CST HTTP：waiting_approval -> completed，生成 S11/带宽、报告、Episode 和经验候选
+真实 CST solver：未调用
+外部 LLM：完整流程 smoke 中明确禁用
+```
+
+# V2.3.1 - 独立学习记忆与受控自进化
+
+更新时间：2026-10-01
+
+本版本将 V2.3 学习记忆从运行时编排中抽成独立 `agent_learning/` 模块，并融合评测驱动的受控自进化能力。自进化不是知识沉淀的别名：知识沉淀负责保存数据，自进化负责根据评测修改系统行为并复测。
+
+## 前后对比
+
+| 项目 | V2.3 | V2.3.1 |
+|---|---|---|
+| 代码归属 | 学习实现位于 `agent_runtime` | 实现独立到 `agent_learning/`，旧路径仅兼容导出 |
+| 论文知识 | 原文编译为 candidate | 增加实体边界、别名消歧、逐句关系绑定和抽取质量评测 |
+| 任务经验 | Episode/Experience candidate | 保留，并同步把成功无 blocker 的动态计划写入旧 L3 workflow |
+| 旧 L2 | 与新学习层并行存在 | 支持从 `config.yaml` 确定性注入项目事实，不修改 `store_l2` |
+| 自进化 | 无行为修改闭环 | 训练集评测 → alias 候选 → 策略校验 → 修改 → 独立复测 → 保留/回滚 |
+| 外部 LLM | 未接学习层 | 可选复用中枢同一 `LLMClient`、URL 和模型，只生成候选建议 |
+| 风险边界 | candidate 需人工晋级 | Prompt、阈值、知识晋级、代码修改仍禁止自动执行 |
+
+## 自进化范围
+
+当前自动执行白名单只有：
+
+```text
+add_entity_aliases
+```
+
+候选 alias 必须满足：目标实体已注册、alias 在原测试文本中逐字存在、不是过短缩写或通用词，并且必须在独立 `verification_cases` 上提高指标；否则不应用或自动回滚。
+
+外部 LLM 不拥有修改权。它只能分析失败样本并提出候选 alias，候选仍需经过本地策略和独立复测。
+
+## 记忆系统调整
+
+当前默认状态：
+
+```yaml
+learning:
+  enabled: true
+  domain_knowledge_enabled: false
+  evolution_enabled: false
+```
+
+默认保留：
+
+```text
+mem:episode:*
+mem:l3:experience:*
+mem:l2:{namespace}:*
+mem:l3:workflow:*
+```
+
+默认关闭：
+
+```text
+原文池 / Evidence / Domain Knowledge
+候选聚类 / 创新 Gate / Wiki
+自进化评测、修改与复测
+```
+
+`domain_knowledge_enabled=false` 时，相关 API 返回 `403 domain_knowledge_disabled`；`recall_promoted()` 的 knowledge 恒为空，但 promoted Experience 继续召回。配置中的 `l2_project_facts` 在 Scheduler 初始化时写入旧 L2；完成且无 blocker 的任务在 Episode 之外同步写入旧 L3 workflow。
+
+## 开启方式
+
+自进化系统必须显式开启：
+
+```yaml
+learning:
+  evolution_enabled: true
+```
+
+环境变量覆盖：
+
+```powershell
+$env:LEARNING_EVOLUTION_ENABLED = "true"
+```
+
+如需恢复论文领域知识链，还需单独启用：
+
+```powershell
+$env:LEARNING_DOMAIN_KNOWLEDGE_ENABLED = "true"
+```
+
+## 真实验证
+
+```text
+Python 全量回归：197/197 passed
+前端生产构建：passed
+Playwright smoke：4/4 passed
+Redis：真实启动并持久化 Episode、Experience、配置 L2、成功工作流 L3
+Qwen Embedding：真实调用 text-embedding-v4，1024 维，passed
+真实 CST：waiting_approval -> approved -> completed，非 mock
+CST S11：1001 点，最低 -9.7695 dB @ 1.027 GHz
+中枢外部 LLM：真实请求到达服务端，但返回 403 GROUP_DELETED
+```
+
+真实 CST 任务为 `80811b847dcaf9b7`，审批 `run_count=1`，所有执行节点完成，生成解析结果和报告。S11 未达到 `-10 dB`，因此 10 dB 带宽为 0；这表示执行链成功但模型性能未达标。
+
+本次不能宣称外部中枢 LLM 测试通过。失败原因是当前 API Key 所属服务分组已被供应商删除，不是代码或网络连接失败。
