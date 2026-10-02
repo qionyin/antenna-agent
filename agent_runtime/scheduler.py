@@ -24,6 +24,7 @@ from .orchestration import (
     LearningLifecycleMixin,
     PlanningServiceMixin,
 )
+from .query_expansion import QueryExpander
 from .retrieval import RetrievalEngine
 from .runtime_llm_config import runtime_llm_config
 from .skill_router import SkillRouter
@@ -69,6 +70,13 @@ class Scheduler(
             },
         )
         self.llm = LLMClient(settings.llm_base_url, settings.llm_api_key_env, settings.llm_model_name, enabled=settings.llm_enabled)
+        self.query_expander = QueryExpander(
+            enabled=settings.query_expansion_enabled,
+            max_variants=settings.query_expansion_max_variants,
+            use_llm=settings.query_expansion_use_llm,
+            llm_client=self.llm,
+            runtime_llm_config=runtime_llm_config,
+        )
         self.learning = LearningService(
             memory,
             enabled=settings.learning_enabled,
@@ -144,11 +152,15 @@ class Scheduler(
         """Create a V2.2.3 dynamic-plan task without forcing seven packets."""
         snapshot = self.registry.save_locked_snapshot(self.settings.workspace_root)
         mode = "real" if modeling_request else "mock"
+        # 收到用户问题后立即拓展，后续向量化/检索统一使用拓展后的 query 列表。
+        query_expansion = self.query_expander.expand_report(user_input)
+        query_variants = list(query_expansion["variants"])
         record = self.blackboard.create_task(
             user_input,
             capability_snapshot_id=snapshot["snapshot_id"],
             task_metadata={
                 "user_input": user_input,
+                "query_expansion": query_expansion,
                 "mode": mode,
                 "runtime_kind": "dynamic",
                 "task_title": self._default_dynamic_title(user_input),
@@ -158,8 +170,8 @@ class Scheduler(
                 "paper_report_path": paper_report_path,
                 "modeling_request": dict(modeling_request or {}),
                 "require_paperwise": require_paperwise,
-                "retrieval_context": self._retrieval_context(user_input),
-                "validated_learning_context": self.learning.recall_promoted(user_input),
+                "retrieval_context": self._retrieval_context(user_input, query_variants),
+                "validated_learning_context": self.learning.recall_promoted(user_input, query_variants=query_variants),
                 "capability_snapshot_path": snapshot["snapshot_path"],
                 "capability_snapshot_lock_path": snapshot["lock_path"],
                 "dynamic_plan_history": [],
@@ -609,12 +621,13 @@ class Scheduler(
             "metadata": {"no_cst_execution": True, **(metadata or {})},
         }
 
-    def _retrieval_context(self, user_input: str) -> dict[str, Any]:
+    def _retrieval_context(self, user_input: str, query_variants: list[str] | None = None) -> dict[str, Any]:
         """Retrieve L2 facts and L3 workflows for planning and step skill routing."""
         return self.retrieval.build_context(
             user_input,
             l2_top_k=self.settings.l2_final_top_k,
             l3_top_k=self.settings.l3_workflow_top_k,
+            query_variants=query_variants,
         )
 
 

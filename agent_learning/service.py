@@ -331,12 +331,20 @@ class LearningService:
             })
         return snapshot
 
-    def recall_promoted(self, query: str, *, knowledge_top_k: int = 2, experience_top_k: int = 1) -> dict[str, Any]:
+    def recall_promoted(
+        self,
+        query: str,
+        *,
+        knowledge_top_k: int = 2,
+        experience_top_k: int = 1,
+        query_variants: list[str] | None = None,
+    ) -> dict[str, Any]:
         if not self.enabled:
             return {
                 "schema_version": "1.0",
                 "policy": "learning_module_disabled",
                 "query_hash": stable_hash(query),
+                "query_variants": [query],
                 "knowledge": [],
                 "experiences": [],
             }
@@ -344,6 +352,7 @@ class LearningService:
             query,
             knowledge_top_k=knowledge_top_k if self.domain_knowledge_enabled else 0,
             experience_top_k=experience_top_k,
+            query_variants=query_variants,
         )
         if not self.domain_knowledge_enabled:
             context["knowledge"] = []

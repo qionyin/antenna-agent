@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from .utils import cosine_similarity, now_iso, stable_hash
+from .utils import cosine_similarity, dedupe_query_variants, now_iso, stable_hash
 
 
 class LearningMemoryRepositoryMixin:
@@ -321,13 +321,22 @@ class LearningMemoryRepositoryMixin:
         if self.store is not None:
             self.store.set_json(f"mem:evolution:config:{name}", record)
 
-    def recall_learning_context(self, query: str, *, knowledge_top_k: int = 2, experience_top_k: int = 1) -> dict[str, Any]:
-        query_vector = self.embed_text(query)
+    def recall_learning_context(
+        self,
+        query: str,
+        *,
+        knowledge_top_k: int = 2,
+        experience_top_k: int = 1,
+        query_variants: list[str] | None = None,
+    ) -> dict[str, Any]:
+        variants = dedupe_query_variants(query, query_variants)
+        query_vectors = [self.embed_text(variant) for variant in variants]
 
         def ranked(records: list[dict[str, Any]], text_builder: Callable[[dict[str, Any]], str], top_k: int) -> list[dict[str, Any]]:
             scored = []
             for record in records:
-                score = cosine_similarity(query_vector, self.embed_text(text_builder(record)))
+                record_vector = self.embed_text(text_builder(record))
+                score = max(cosine_similarity(query_vector, record_vector) for query_vector in query_vectors)
                 scored.append({**record, "retrieval_score": round(float(score), 6)})
             return sorted(scored, key=lambda item: (-item["retrieval_score"], str(item.get("knowledge_id") or item.get("experience_id") or "")))[:top_k]
 
@@ -337,6 +346,7 @@ class LearningMemoryRepositoryMixin:
             "schema_version": "1.0",
             "policy": "promoted_only",
             "query_hash": stable_hash(query),
+            "query_variants": variants,
             "knowledge": knowledge,
             "experiences": experiences,
         }

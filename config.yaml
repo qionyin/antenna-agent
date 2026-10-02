@@ -31,6 +31,10 @@ retrieval:
   l3_workflow_top_k: 5
   l2_min_relevance_score: 0.51
   l3_min_relevance_score: 0.51
+  query_expansion:
+    enabled: true
+    max_variants: 5
+    use_llm: true
 
 llm:
   enabled: false

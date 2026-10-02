@@ -16,6 +16,16 @@ def stable_hash(value: Any) -> str:
     return hashlib.sha256(data.encode("utf-8")).hexdigest()
 
 
+def dedupe_query_variants(query: str, query_variants: list[str] | None = None) -> list[str]:
+    """原句在前，拓展 query 去重后追加。"""
+    variants = [str(query or "")]
+    for item in query_variants or []:
+        text = str(item or "").strip()
+        if text and text not in variants:
+            variants.append(text)
+    return variants
+
+
 def cosine_similarity(left: list[float], right: list[float]) -> float:
     if not left or not right or len(left) != len(right):
         return 0.0
