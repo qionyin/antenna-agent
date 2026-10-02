@@ -25,6 +25,7 @@ def dedupe_query_variants(query: str, query_variants: list[str] | None = None) -
 BM25_RECALL_TOP_K = 50
 EMBEDDING_RECALL_TOP_K = 15
 FINAL_SEMANTIC_TOP_K = 5
+RRF_K = 60
 DEFAULT_MIN_RELEVANCE_SCORES = {"l2": 0.51, "l3": 0.51}
 EMBEDDING_CACHE_SIZE = 2048
 ANTENNA_DICTIONARY_PATH = Path(__file__).with_name("dictionaries") / "antenna_terms.txt"
@@ -49,7 +50,7 @@ def _bm25_tokens(text: str) -> list[str]:
 
 
 class RetrievalEngine:
-    """BM25/embedding coarse recall followed by original-query embedding rerank."""
+    """Run BM25 and embedding rankings per query, then fuse them with RRF."""
 
     def __init__(self, memory_manager: Any, minimum_relevance_scores: dict[str, float] | None = None):
         self.memory = memory_manager
@@ -103,35 +104,50 @@ class RetrievalEngine:
         if not records or top_k <= 0:
             return []
         variants = dedupe_query_variants(query, query_variants)
-        query_vectors = [self._embed_text(variant) for variant in variants]
-        embedding_scores = self._embedding_scores(layer, records, query_vectors)
-        bm25_scores = self._bm25_scores(variants, layer, records)
-
-        bm25_ids = [
-            self._record_id(records[index])
-            for index in sorted(
+        ranking_lists: list[list[str]] = []
+        semantic_scores_by_variant: list[dict[str, float]] = []
+        bm25_scores_by_variant: list[list[float]] = []
+        for variant in variants:
+            bm25_scores = self._bm25_scores([variant], layer, records)
+            bm25_scores_by_variant.append(bm25_scores)
+            bm25_order = sorted(
                 range(len(records)),
                 key=lambda index: (-bm25_scores[index], self._record_id(records[index])),
             )[:BM25_RECALL_TOP_K]
-        ]
-        embedding_ids = [
-            record_id
-            for record_id, _ in sorted(embedding_scores.items(), key=lambda item: (-item[1], item[0]))[:EMBEDDING_RECALL_TOP_K]
-        ]
-        candidate_ids = set([*bm25_ids, *embedding_ids])
+            ranking_lists.append([self._record_id(records[index]) for index in bm25_order])
+
+            query_vector = self._embed_text(variant)
+            embedding_scores = self._embedding_scores(layer, records, [query_vector])
+            semantic_scores_by_variant.append(embedding_scores)
+            ranking_lists.append([
+                record_id
+                for record_id, _ in sorted(embedding_scores.items(), key=lambda item: (-item[1], item[0]))[:EMBEDDING_RECALL_TOP_K]
+            ])
+
+        rrf_scores: dict[str, float] = {}
+        for ranking in ranking_lists:
+            for rank, record_id in enumerate(ranking, start=1):
+                rrf_scores[record_id] = rrf_scores.get(record_id, 0.0) + 1.0 / (RRF_K + rank)
+
+        candidate_ids = set(rrf_scores)
         records_by_id = {self._record_id(record): record for record in records}
-        bm25_by_id = {self._record_id(record): float(score) for record, score in zip(records, bm25_scores)}
+        original_embedding_scores = semantic_scores_by_variant[0]
+        max_bm25_scores = {
+            self._record_id(record): max(scores[index] for scores in bm25_scores_by_variant)
+            for index, record in enumerate(records)
+        }
         threshold = self.minimum_relevance_scores[layer]
 
         ranked = []
         for record_id in candidate_ids:
-            embedding_score = float(embedding_scores.get(record_id, 0.0))
-            if embedding_score < threshold:
+            original_embedding_score = float(original_embedding_scores.get(record_id, 0.0))
+            if original_embedding_score < threshold:
                 continue
+            ranking_memberships = sum(record_id in ranking for ranking in ranking_lists)
             coarse_sources = []
-            if record_id in bm25_ids:
+            if any(record_id in ranking_lists[index] for index in range(0, len(ranking_lists), 2)):
                 coarse_sources.append("bm25_top50")
-            if record_id in embedding_ids:
+            if any(record_id in ranking_lists[index] for index in range(1, len(ranking_lists), 2)):
                 coarse_sources.append("embedding_top15")
             record = dict(records_by_id[record_id])
             if layer == "l2":
@@ -139,22 +155,32 @@ class RetrievalEngine:
             ranked.append({
                 **record,
                 "source": f"{layer}_memory",
-                "hit_reason": "bm25_top50+embedding_top15->original_embedding_rerank",
-                "retrieval_score": embedding_score,
-                "retrieval_components": {"embedding": embedding_score},
-                "bm25_score": bm25_by_id.get(record_id, 0.0),
+                "hit_reason": "per_query_bm25+embedding->rrf_fusion",
+                "retrieval_score": round(rrf_scores[record_id], 8),
+                "retrieval_components": {
+                    "rrf": round(rrf_scores[record_id], 8),
+                    "original_embedding": round(original_embedding_score, 8),
+                },
+                "semantic_score": round(original_embedding_score, 8),
+                "rrf_score": round(rrf_scores[record_id], 8),
+                "bm25_score": max_bm25_scores.get(record_id, 0.0),
                 "coarse_sources": coarse_sources,
+                "ranking_memberships": ranking_memberships,
                 "retrieval_pipeline": {
                     "query_variant_count": len(variants),
                     "bm25_top_k": BM25_RECALL_TOP_K,
                     "embedding_top_k": EMBEDDING_RECALL_TOP_K,
-                    "candidate_count_before_dedupe": len(bm25_ids) + len(embedding_ids),
+                    "ranking_list_count": len(ranking_lists),
+                    "fusion": "rrf",
+                    "rrf_k": RRF_K,
+                    "candidate_count_before_dedupe": sum(len(ranking) for ranking in ranking_lists),
                     "candidate_count_after_dedupe": len(candidate_ids),
                     "semantic_threshold": threshold,
+                    "threshold_basis": "original_query_embedding",
                     "final_top_k": top_k,
                 },
             })
-        return sorted(ranked, key=lambda item: (-item["retrieval_score"], self._record_id(item)))[:top_k]
+        return sorted(ranked, key=lambda item: (-item["rrf_score"], -item["semantic_score"], self._record_id(item)))[:top_k]
 
     def _bm25_scores(self, queries: str | list[str], layer: str, records: list[dict[str, Any]]) -> list[float]:
         """多个 query 的 BM25 分数按记录取最大值。"""

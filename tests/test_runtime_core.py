@@ -305,10 +305,9 @@ class RuntimeCoreTests(unittest.TestCase):
 
         hit = RetrievalEngine(memory).retrieve_l2("patch antenna target setting", final_top_k=1)[0]
 
-        self.assertGreaterEqual(hit["retrieval_score"], 0.0)
-        self.assertLessEqual(hit["retrieval_score"], 1.0)
-        self.assertEqual(set(hit["retrieval_components"]), {"embedding"})
-        self.assertEqual(hit["retrieval_score"], hit["retrieval_components"]["embedding"])
+        self.assertGreater(hit["retrieval_score"], 0.0)
+        self.assertEqual(set(hit["retrieval_components"]), {"rrf", "original_embedding"})
+        self.assertEqual(hit["retrieval_score"], hit["rrf_score"])
 
     def test_retrieval_minimum_score_can_return_fewer_than_top_k(self):
         memory = MemoryManager(store=None)
@@ -409,8 +408,34 @@ class RuntimeCoreTests(unittest.TestCase):
         self.assertEqual(pipeline["bm25_top_k"], 50)
         self.assertEqual(pipeline["embedding_top_k"], 15)
         self.assertEqual(pipeline["candidate_count_before_dedupe"], 65)
+        self.assertEqual(pipeline["ranking_list_count"], 2)
+        self.assertEqual(pipeline["fusion"], "rrf")
         self.assertLessEqual(pipeline["candidate_count_after_dedupe"], 65)
         self.assertEqual(pipeline["final_top_k"], 5)
+
+    def test_retrieval_expansion_builds_six_queries_and_twelve_rrf_lists(self):
+        memory = MemoryManager(store=None)
+        for index in range(70):
+            memory.l2[f"record-{index:02d}"] = {
+                "memory_id": f"record-{index:02d}",
+                "namespace": "test",
+                "status": "active",
+                "confidence": 0.7,
+                "fact": {"text": f"patch antenna target setting variant {index}"},
+            }
+
+        variants = [f"expanded query {index}" for index in range(1, 6)]
+        hits = RetrievalEngine(
+            memory, minimum_relevance_scores={"l2": 0.0, "l3": 0.0}
+        ).retrieve_l2("patch antenna target setting", final_top_k=10, query_variants=variants)
+
+        self.assertEqual(len(hits), 5)
+        pipeline = hits[0]["retrieval_pipeline"]
+        self.assertEqual(pipeline["query_variant_count"], 6)
+        self.assertEqual(pipeline["ranking_list_count"], 12)
+        self.assertEqual(pipeline["candidate_count_before_dedupe"], 390)
+        self.assertEqual(pipeline["final_top_k"], 5)
+        self.assertEqual(pipeline["threshold_basis"], "original_query_embedding")
 
     def test_skill_packet_validator_rejects_missing_payload_contract(self):
         packet = {
